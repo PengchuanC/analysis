@@ -12,6 +12,8 @@ from analysis import exc
 from analysis import sql_utils
 from analysis.style.style import compute_style
 
+from analysis.brinson.external import get_holding
+
 
 w.start()
 
@@ -232,20 +234,14 @@ def brinson(fund, date):
     return high[:6] + low[:6] + [rtt, raa, rss, rin]
 
 
-def barra(fund, rpt="20191231"):
+def barra(rpt):
     """获取基金指定日期因子暴露度"""
-    date = w.tdaysoffset(0, format_date(END), "").Data[0][0]
-    err, weight = w.wset(
-        "allfundhelddetail",
-        f"rptdate={rpt};windcode={fund};field=sec_name,stock_code,proportiontototalstockinvestments",
-        usedf=True
-    )
-    if err != 0:
-        raise exc.WindRuntimeError(err)
-    weight.columns = ['name', 'code', 'weight']
+    data, _ = get_holding()
+    weight = data.get(rpt)
+    weight.columns = ['code', 'weight']
     weight['code'] = weight['code'].apply(lambda x: x[:6])
     weight['weight'] = weight['weight'] / 100
-    exposure = sql_utils.daily_exposure(date)
+    exposure = sql_utils.daily_exposure(rpt)
     exposure = exposure[exposure.index.isin(weight['code'])]
     exposure = exposure.sort_index()
     weight = weight.sort_values(['code'])
@@ -256,3 +252,9 @@ def barra(fund, rpt="20191231"):
     ret = pd.Series(ret, index=symbol)
     ret = round(ret, 4)
     return list(ret)
+
+
+if __name__ == '__main__':
+    from datetime import date
+    d = barra(date(2020, 7, 14))
+    print(d)

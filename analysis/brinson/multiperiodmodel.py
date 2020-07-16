@@ -14,37 +14,38 @@ import pandas as pd
 
 from analysis.brinson.model import Model, base_index
 from analysis.brinson.config import sw_index_nickname
+from analysis.brinson.external import get_holding
 
 
 class MultiPeriodModel(Model):
     def __init__(self, pt: dict, rpt_date, index=base_index):
-        super().__init__(pt, rpt_date, index)
         self.pt = pt
         self.rpt_date = rpt_date
         self.index = index
         self._init_model()
+        super().__init__(pt, rpt_date, index)
 
     def compute_multi_period(self):
-        rpt = self.rpt_date
-        month = rpt.month
-        year = rpt.year
-        if month == 6:
-            ret = [date(year, 6, 30)]
-        else:
-            ret = [date(year, 6, 30), date(year, 12, 31)]
+        _, weight = get_holding()
+        ret = list(weight.keys())
+        ret = sorted(ret)
         return ret
 
     def _init_model(self):
-        rpts = self.compute_multi_period()
+        _, weight = get_holding()
+        ret = list(weight.keys())
+        rpts = sorted(ret)
         nickname = {y: x for x, y in sw_index_nickname.items()}
         nickname = pd.DataFrame(pd.Series(nickname, name="nickname"))
         q1, q2, q3, q4 = pd.DataFrame(nickname).copy(), pd.DataFrame(nickname).copy(), pd.DataFrame(nickname).copy(), pd.DataFrame(nickname).copy()
         for rpt in rpts:
             m = Model(self.pt, rpt, self.index)
-            q1[rpt] = (m.q1/100).copy()
-            q2[rpt] = (m.q2/100).copy()
-            q3[rpt] = (m.q3/100).copy()
-            q4[rpt] = (m.q4/100).copy()
+            w = weight.get(rpt)
+            q1[rpt] = (m.q1/100).copy()*w
+            q2[rpt] = (m.q2/100).copy()*w
+            q3[rpt] = (m.q3/100).copy()*w
+            q4[rpt] = (m.q4/100).copy()*w
+            print(q4)
         data = {"q1": q1.copy(), "q2": q2.copy(), "q3": q3.copy(), "q4": q4.copy()}
         for key, value in data.items():
             value = value.set_index("nickname")
@@ -70,5 +71,6 @@ class MultiPeriodModel(Model):
 
 
 if __name__ == '__main__':
-    m = MultiPeriodModel({"110011.OF": 1}, date(2019, 12, 31))
+    m = MultiPeriodModel({"110011.OF": 1}, date(2020, 7, 1))
     d = m.quick_look()
+    d.to_clipboard()

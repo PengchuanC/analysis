@@ -64,6 +64,12 @@ class Model(Allocate):
 
 if __name__ == '__main__':
     """Brinson模块使用方式如下"""
-    m = Model({"260112.OF": 1}, date(2019, 12, 31),)
-    m.quick_look().to_clipboard()
+    from analysis.brinson.external import get_holding
+
+    _, weight = get_holding()
+    dates = list(weight.keys())
+    dates = sorted(dates)
+    for date_ in dates:
+        m = Model({"260112.OF": 1}, date_,)
+        m.quick_look().to_clipboard()
 

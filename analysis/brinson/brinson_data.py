@@ -21,7 +21,8 @@ class PrepareData(object):
         基金股票配置，获取单个基金在个股上的配置
         :return:
         """
-        holding = get_holding()
+        print(self.rpt_date)
+        holding, _ = get_holding()
         data = holding.get(self.rpt_date)
         data['stock_code'] = data['证券代码']
         data['i_weight'] = data['市值'] * 100
@@ -75,6 +76,6 @@ class PrepareData(object):
 
 
 if __name__ == '__main__':
-    ppd = PrepareData({"110011.OF": 1.0}, date(2020, 6, 15))
+    ppd = PrepareData({"110011.OF": 1.0}, date(2020, 7, 10))
     ret = ppd.portfolio_stock_allocate()
     print(ret)
